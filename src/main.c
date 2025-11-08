@@ -9,41 +9,63 @@
 #define MAX_RAND 10000
 #define MIN_RAND -10000
 
+//global variables
+
 typedef struct{
 	int* csr_vector;
 	int* csr_col;
 	double* csr_val;
 }csr_matrix;
 
+char* matrix;
+int thread_num;
+char* schedule_type;
+int schedule_chunksize;
+
 csr_matrix coo_to_csr(int M_, int nz_, int *I_, int* J_, double* val_);
 double* vect_generator(int M_);
+double* multiplication(const csr_matrix*, const double* vector, int M_);
+
 
 int main(int argc, char *argv[]){
 	
 	srand(time(NULL));
 
-	if(argc != 2){
-		printf("Usage: %s [path of the matrix]\n", argv[0], argv[1]);
+	if(argc != 5){
+		printf("Usage: %s [path of the matrix] [thread num] [schedule type] [schedule chunksize]\n", argv[0], argv[1]);
 		return -1;
 	}
+
+	//REMEMBER TO IMPLEMENT THE ARGUMENTS CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+	matrix = argv[1];
+	thread_num = atoi(argv[2]);
+	schedule_type = argv[3];
+	schedule_chunksize = atoi(argv[4]);
 
 	double *val;
 	int *I, *J, M, N, nz;
-	//I = columns, J = rows
+	//I = indices rows, J = indices columns
+	//M = numbers of rows, N = numbers of columns
 
-	if (mm_read_unsymmetric_sparse(argv[1], &M, &N, &nz, &val, &I, &J)){
+	if (mm_read_unsymmetric_sparse(matrix, &M, &N, &nz, &val, &I, &J)){
 		printf("Unable to read the Matrix!\n");
 		return -1;
+	}else{
+		printf("Matrix %s selected\n", matrix);
 	}
 
 	printf("Lines: %d, Columns: %d, Non zero values: %d\n", M, N, nz);
-	//printf("%d, %d, %f\n", I[3], J[3], val[3]);
 
 	printf("Translating the matrix from COO to CSR...\n");
 	csr_matrix csr = coo_to_csr(M, nz, I, J, val);
 
 	printf("Creating random vector...\n");
 	double* random_vector = vect_generator(M);
+
+	printf("Calculating the moltiplication with the following parameters:\n");
+	printf("Thread num: %d\nSchedule type: %s\nSchedule chunksize: %d\n", thread_num, schedule_type, schedule_chunksize);
+	double* result_vector = multiplication(&csr, random_vector, M);
 
 	free(I);
 	free(J);
@@ -60,27 +82,25 @@ csr_matrix coo_to_csr(int M_, int nz_, int *I_, int* J_, double* val_){
 
 	csr_matrix csr_mat;
 
-	csr_mat.csr_col = (int*) malloc(nz_ * sizeof(int));
-	csr_mat.csr_val = (double*) malloc(nz_ * sizeof(double));
+	csr_mat.csr_col = malloc(nz_ * sizeof(int));
+	csr_mat.csr_val = malloc(nz_ * sizeof(double));
 	if (csr_mat.csr_col == NULL || csr_mat.csr_val == NULL) exit(1);
 	
-	csr_mat.csr_vector = (int *) calloc((M_ + 1), sizeof(int));
+	csr_mat.csr_vector = calloc((M_ + 1), sizeof(int));
 	if (csr_mat.csr_vector == NULL) exit(1);
 	
 	//counting the nz elements for each row
-
 	for(int i = 0; i < nz_; i++){
 		csr_mat.csr_vector[I_[i] + 1]++;
 	}
 
 	//prefix sum
-
 	for (int i = 1; i <= M_; i++){
 		csr_mat.csr_vector[i] += csr_mat.csr_vector[i-1];
 	}
 
 	//reordering 
-	int* row_pos = (int*) malloc((M_ + 1) * sizeof(int));
+	int* row_pos = malloc((M_ + 1) * sizeof(int));
     if (row_pos == NULL) exit(1);
     memcpy(row_pos, csr_mat.csr_vector, (M_ + 1) * sizeof(int));
 
@@ -88,7 +108,6 @@ csr_matrix coo_to_csr(int M_, int nz_, int *I_, int* J_, double* val_){
         int row_index = I_[i];
         int dest_idx = row_pos[row_index];
 
-        // Copia i dati COO nella posizione CSR corretta (riordinamento implicito)
         csr_mat.csr_col[dest_idx] = J_[i];
         csr_mat.csr_val[dest_idx] = val_[i];
 
@@ -100,9 +119,31 @@ csr_matrix coo_to_csr(int M_, int nz_, int *I_, int* J_, double* val_){
 	return csr_mat;
 }
 
-double* vect_generator(int M_){
-	
-	double* vect = (double *) malloc(M_ * sizeof(double));
-	for (int i = 0; i < M_; i++){ vect[i] = (double) (rand()% (MAX_RAND - MIN_RAND + 1) + MIN_RAND) / 1000.0; }
+double* vect_generator(int N_){
+	double* vect = malloc(N_ * sizeof(double));
+	for (int i = 0; i < N_; i++){ vect[i] = (double) (rand()% (MAX_RAND - MIN_RAND + 1) + MIN_RAND) / 1000.0; }
 	return vect;	
 }
+
+double* multiplication(const csr_matrix* mat, const double* vector, int M_){
+
+	double* res_vect = malloc(M_ * sizeof(double));
+	if (res_vect == NULL) {
+        fprintf(stderr, "Errore di allocazione per il vettore risultato c.\n");
+        return NULL;
+    }
+
+	for(int i = 0; i < M_; i++){
+
+		double sum = 0.0;
+
+		for(int j = mat->csr_vector[i]; j < mat->csr_vector[i + 1]; j++){
+			sum += mat->csr_val[j] * vector[mat->csr_col[j]];
+		}
+
+		res_vect[i] = sum;
+	}
+
+	return res_vect;
+}
+
