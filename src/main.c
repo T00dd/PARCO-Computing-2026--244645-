@@ -36,12 +36,23 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 
-	//REMEMBER TO IMPLEMENT THE ARGUMENTS CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 	matrix = argv[1];
 	thread_num = atoi(argv[2]);
 	schedule_type = argv[3];
 	schedule_chunksize = atoi(argv[4]);
+
+	if (thread_num < 1 || thread_num > 64){
+		fprintf(stderr, "Invalid number of thread selected!\nPlease enter a number in this period [1,64]\n");
+		return -1;
+	}
+	if (strcmp(schedule_type, "static") && strcmp(schedule_type, "dynamic") && strcmp(schedule_type, "guided")){
+		fprintf(stderr, "Invalid schedule type selected!\nPlease enter one of this schedule type:\nstatic\ndynamic\nguided\n");
+		return -1;
+	}
+	if (schedule_chunksize < 1 || schedule_chunksize > 10000){
+		fprintf(stderr, "Invalid schedule chunksize selected!\nPlease enter a number in this period [1,10000]\n");
+		return -1;
+	}
 
 	double *val;
 	int *I, *J, M, N, nz;
@@ -49,7 +60,7 @@ int main(int argc, char *argv[]){
 	//M = numbers of rows, N = numbers of columns
 
 	if (mm_read_unsymmetric_sparse(matrix, &M, &N, &nz, &val, &I, &J)){
-		printf("Unable to read the Matrix!\n");
+		fprintf(stderr, "Unable to read the Matrix!\n");
 		return -1;
 	}else{
 		printf("Matrix %s selected\n", matrix);
