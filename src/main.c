@@ -24,7 +24,7 @@ char* schedule_type;
 int schedule_chunksize;
 
 csr_matrix coo_to_csr(int M_, int nz_, int *I_, int* J_, double* val_);
-double* vect_generator(int M_);
+double* vect_generator(int N_);
 double multiplication(const csr_matrix*, const double* vector, int M_);
 
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
 	csr_matrix csr = coo_to_csr(M, nz, I, J, val);
 
 	printf("Creating random vector...\n");
-	double* random_vector = vect_generator(M);
+	double* random_vector = vect_generator(N);
 
 	printf("Calculating the moltiplication with the following parameters:\n");
 	printf("Thread num: %d\nSchedule type: %s\nSchedule chunksize: %d\n", thread_num, schedule_type, schedule_chunksize);
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 
-	fprintf(fp, "%s, %d, %s, %d, %e\n", matrix, thread_num, schedule_type, schedule_chunksize, time);
+	fprintf(fp, "%s, %d, %s, %d, %f\n", matrix, thread_num, schedule_type, schedule_chunksize, time);
 	
 	fclose(fp);
 
@@ -188,7 +188,8 @@ double multiplication(const csr_matrix* mat, const double* vector, int M_){
 	GET_TIME(finish)
 
 	elapsed = finish - start;
+	free(res_vect);
 
-	return elapsed;
+	return (elapsed * 1000);
 }
 
