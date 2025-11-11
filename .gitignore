@@ -1,3 +1,5 @@
 
 src/spmv
-
+spmv_benchmark
+data/Freescale2.mtx
+scripts/*.sh

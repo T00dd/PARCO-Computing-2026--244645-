@@ -58,9 +58,16 @@ int main(int argc, char *argv[]){
     //setting ambient variables:
 
     omp_set_num_threads(thread_num);
-    char str_schedule[100];
-    sprintf(str_schedule, "%s,%d", schedule_type, schedule_chunksize);
-    setenv("OMP_SCHEDULE", str_schedule, 1);
+    
+    if (strcmp(schedule_type, "static")){
+        omp_set_schedule(omp_sched_static, schedule_chunksize);
+    }else{
+        if (strcmp(schedule_type, "dynamic")){
+            omp_set_schedule(omp_sched_dynamic, schedule_chunksize);
+        }else{
+            omp_set_schedule(omp_sched_guided, schedule_chunksize);
+        }        
+    }    
 
     double *val;
     int *I, *J, M, N, nz;
@@ -174,7 +181,7 @@ double multiplication(const csr_matrix* mat, const double* vector, int M_){
     }
 
     GET_TIME(start)
-    #pragma omp parallel for default(none) shared(mat, vector, res_vect, M_) schedule(runtime)
+    #pragma omp parallel for default(none) shared(mat, vector, res_vect, M_)
     for(int i = 0; i < M_; i++){
 
         double sum = 0.0;
