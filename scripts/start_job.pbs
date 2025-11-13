@@ -9,7 +9,7 @@
 
 #PBS -q short_cpuQ
 #PBS -l walltime=06:00:00
-#PBS -l select=1:ncpus=64:mem=16gb
+#PBS -l select=1:ncpus=64:mem=32gb
 
 module load gcc91
 module load perf
@@ -27,11 +27,11 @@ PERF_TIME_RESULTS_FILE="../results/perf_time_results.csv"
 while getopts "p" opt; do
   case $opt in
     p)
-      echo "Flag -p rilevato: Attivazione modalità PERF"
+      echo "Activating PERF mode"
       PERF_MODE=1 
       ;;
     \?)
-      echo "Errore: Opzione -$OPTARG non valida." >&2
+      echo "Error: Option -$OPTARG not valid." >&2
       exit 1
       ;;
   esac
@@ -65,9 +65,9 @@ matrix_download(){
 		  	mv "$TARGET_DIR/$NAME/$NAME.mtx" "$TARGET_DIR/"
 		    rm -rf "$TARGET_DIR/$NAME" 
 		    rm "$TARGET_DIR/$NAME.tar.gz" 
-		    echo "Matrice $NAME pronta all'uso."
+		    echo "Matrix $NAME ready to use."
 		else
-		    echo "ERRORE: File .mtx non trovato dopo l'estrazione per $NAME"
+		    echo "ERROR: File .mtx not found after extraction: $NAME"
 		    exit 1
 		fi
 		
@@ -78,9 +78,13 @@ matrix_download(){
 
 echo "Checking matrices..."
 
-matrix_download "Freescale2" "https://sparse.tamu.edu/MM/Freescale/Freescale2.tar.gz"
-matrix_download "rajat31" "https://sparse.tamu.edu/MM/Rajat/rajat31.tar.gz"
-matrix_download "G3_circuit" "https://sparse.tamu.edu/MM/AMD/G3_circuit.tar.gz"
+matrix_download "twotone" "https://sparse.tamu.edu/MM/ATandT/twotone.tar.gz"
+matrix_download "Transport" "https://sparse.tamu.edu/MM/Janna/Transport.tar.gz"
+matrix_download "cage14" "https://sparse.tamu.edu/MM/vanHeukelum/cage14.tar.gz"
+matrix_download "torso1" "https://sparse.tamu.edu/MM/Norris/torso1.tar.gz"
+matrix_download "memchip" "https://sparse.tamu.edu/MM/Freescale/memchip.tar.gz"
+
+
 
 echo "Compiling and executing benchmark..."
 
@@ -94,10 +98,12 @@ echo "Compilation completed!"
 
 #definition of all the combinations
 
-MATRICES=(	"../data/Freescale2.mtx"
-			"../data/rajat31.mtx"
-			"../data/G3_circuit.mtx"	)
-
+MATRICES=(	"../data/twotone.mtx"
+			"../data/Transport.mtx"
+			"../data/cage14.mtx"
+			"../data/torso1.mtx"
+			"../data/memchip.mtx"	)
+			
 THREADS=(1 2 4 8 16 32 64)
 SCHEDULES=(static dynamic guided)
 CHUNKS=(1 10 100 1000 10000)
