@@ -6,3 +6,4 @@ data/G3_circuit.mtx
 data/rajat31.mtx
 data/web-Google.mtx
 scripts/*.sh
+data/*.mtx
