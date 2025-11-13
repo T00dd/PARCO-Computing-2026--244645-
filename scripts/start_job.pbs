@@ -17,9 +17,25 @@ module load gcc91
 cd "$PBS_O_WORKDIR/.."
 cd "src"
 
+PERF_MODE=0
+PERF_RESULTS_FILE="../results/perf_results_logs.csv"
+PERF_TIME_RESULTS_FILE="../results/perf_time_results.csv"
+
+while getopts "p" opt; do
+  case $opt in
+    p)
+      echo "Flag -p rilevato: Attivazione modalità PERF"
+      PERF_MODE=1 
+      ;;
+    \?)
+      echo "Errore: Opzione -$OPTARG non valida." >&2
+      exit 1
+      ;;
+  esac
+done
+
 echo "Reassembling big matrices..."
 cat ../data/Freescale2.mtx.part-a* > ../data/Freescale2.mtx
-cat ../data/web-Google.mtx.part-a* > ../data/web-Google.mtx
 cat ../data/rajat31.mtx.part-a* > ../data/rajat31.mtx
 cat ../data/G3_circuit.mtx.part-a* > ../data/G3_circuit.mtx
 
@@ -35,41 +51,76 @@ echo "Compilation completed!"
 
 #definition of all the combinations
 
-MATRICES=(	"../data/twotone.mtx" 
-		"../data/Freescale2.mtx"
-		"../data/web-Google.mtx"
-		"../data/rajat31.mtx"
-		"../data/G3_circuit.mtx"	)
+MATRICES=(	"../data/Freescale2.mtx"
+			"../data/rajat31.mtx"
+			"../data/G3_circuit.mtx"	)
 
 THREADS=(1 2 4 8 16 32 64)
 SCHEDULES=(static dynamic guided)
 CHUNKS=(1 10 100 1000 10000)
 
-echo "--- DEBUG ---"
-echo "Contenuto MATRICES: ${MATRICES[@]}"
-echo "Numero elementi MATRICES: ${#MATRICES[@]}"
-echo "Contenuto THREADS: ${THREADS[@]}"
-echo "Numero elementi THREADS: ${#THREADS[@]}"
-echo "--- FINE DEBUG ---"
-
 RESULTS_FILE="../results/"
 
-echo "matrix, threads, schedules type, chunk size, time (ms)" > "$RESULTS_FILE/time_results.csv"
+
+
 
 echo "Starting benchmark..."
 
-for matrix in "${MATRICES[@]}"; do
-	for threads in "${THREADS[@]}"; do
-		for schedule in "${SCHEDULES[@]}"; do
-			for chunk in "${CHUNKS[@]}"; do
-				echo "Running 10 times: $matrix, $threads, $schedule, $chunk"
-				for ((i=0; i<10; i++)); do
-					./spmv_benchmark "$matrix" "$threads" "$schedule" "$chunk"
-				done 
+if [ "$PERF_MODE" -eq 0 ]; then
+
+	echo "matrix, threads, schedules type, chunk size, time (ms)" > "$RESULTS_FILE/time_results.csv"
+
+	for matrix in "${MATRICES[@]}"; do
+		for threads in "${THREADS[@]}"; do
+			for schedule in "${SCHEDULES[@]}"; do
+				for chunk in "${CHUNKS[@]}"; do
+					if [ "$threads" -eq 1 ] && { [ "$schedule" != "static" ] || [ "$chunk" -ne 1 ]; }; then
+						continue
+					fi
+									
+					echo "Running 10 times: $matrix, $threads, $schedule, $chunk"
+					
+					
+						./spmv_benchmark "$matrix" "$threads" "$schedule" "$chunk"
+					                    
+					    if [ $? -ne 0 ]; then
+					    	echo "ERRORE durante l'esecuzione (Run $i): $matrix, $threads, $schedule, $chunk"
+					    fi
+					
+				done
 			done
 		done
 	done
-done
+
+else
+
+	echo "matrix, threads, schedules type, chunk size, time (ms)" > "$PERF_TIME_RESULTS_FILE"
+	echo " " > "$PERF_RESULTS_FILE"
+
+	for matrix in "${MATRICES[@]}"; do
+		for threads in "${THREADS[@]}"; do
+			for schedule in "${SCHEDULES[@]}"; do
+				for chunk in "${CHUNKS[@]}"; do
+
+					if [ "$threads" -eq 1 ] && { [ "$schedule" != "static" ] || [ "$chunk" -ne 1 ]; }; then
+						continue
+					fi
+									
+					echo "Running perf 5 times: $matrix, $threads, $schedule, $chunk"
+					echo "$matrix,$threads,$schedule,$chunk" >> "$PERF_RESULTS_FILE"
+					
+					for ((i=0; i<5; i++)); do
+						perf stat -x, -e L1-dcache-loads,L1-dcache-load-misses,LLC-loads,LLC-misses ./spmv_benchmark "$matrix" "$threads" "$schedule" "$chunk" "$PERF_TIME_RESULTS_FILE" 2>> "$PERF_RESULTS_FILE"					                    
+					    if [ $? -ne 0 ]; then
+					    	echo "ERRORE durante l'esecuzione perf (Run $i): $matrix, $threads, $schedule, $chunk"
+					    fi
+					done
+				done
+			done
+		done
+	done
+
+fi
 
 echo "Benchmark completed. Time results saved in $RESULTS_FILE"
 

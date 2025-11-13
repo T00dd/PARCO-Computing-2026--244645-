@@ -22,18 +22,19 @@ char* matrix;
 int thread_num;
 char* schedule_type;
 int schedule_chunksize;
+char* results = "../results/time_results.csv";
 
 csr_matrix coo_to_csr(int M_, int nz_, int *I_, int* J_, double* val_);
 double* vect_generator(int N_);
 double multiplication(const csr_matrix*, const double* vector, int M_);
-
+double multiplication_sequential(const csr_matrix* mat, const double* vector, int M_);
 
 int main(int argc, char *argv[]){
 
     srand(time(NULL));
 
-    if(argc != 5){
-        printf("Usage: %s [path of the matrix] [thread num] [schedule type] [schedule chunksize]\n", argv[0], argv[1]);
+    if(argc < 5 || argc > 6){
+        printf("Usage: %s [path of the matrix] [thread num] [schedule type] [schedule chunksize] [results .csv]\n", argv[0], argv[1]);
         return -1;
     }
 
@@ -41,6 +42,10 @@ int main(int argc, char *argv[]){
     thread_num = atoi(argv[2]);
     schedule_type = argv[3];
     schedule_chunksize = atoi(argv[4]);
+
+    if(argc == 6){
+        results = argv[5];
+    }
 
     if (thread_num < 1 || thread_num > 64){
         fprintf(stderr, "Invalid number of thread selected!\nPlease enter a number in this period [1,64]\n");
@@ -55,7 +60,7 @@ int main(int argc, char *argv[]){
         return -1;
     }
 
-    //setting ambient variables:
+    //setting enviroment variables:
 
     omp_set_num_threads(thread_num);
     
@@ -82,23 +87,56 @@ int main(int argc, char *argv[]){
     csr_matrix csr = coo_to_csr(M, nz, I, J, val);
 
     double* random_vector = vect_generator(N);
-    double time = multiplication(&csr, random_vector, M);
 
-    if (time == -1.0) {
-        fprintf(stderr, "Memory error, SpMV failed\n");
-        return -1; 
-    }
+
+    
 
     FILE* fp;
-    const char* filename_csv = "../results/time_results.csv";
 
-    fp = fopen(filename_csv, "a");
+    fp = fopen(results, "a");
     if (fp == NULL){
-        fprintf(stderr, "ERR: impossible to open %s\n", filename_csv);
+        fprintf(stderr, "ERR: impossible to open %s\n", results);
         return -1;
     }
 
-    fprintf(fp, "%s, %d, %s, %d, %f\n", matrix, thread_num, schedule_type, schedule_chunksize, time);
+    int i;
+    double time;
+
+    if(argc == 6){
+
+        time = multiplication(&csr, random_vector, M);
+            
+        if (time == -1.0) {
+            fprintf(stderr, "Memory error, SpMV failed\n");
+            return -1; 
+        }
+            
+        if(thread_num == 1){
+                fprintf(fp, "%s, %d, seq, NULL, %f\n", matrix, thread_num, schedule_type, schedule_chunksize, time);
+        }else{
+                fprintf(fp, "%s, %d, %s, %d, %f\n", matrix, thread_num, schedule_type, schedule_chunksize, time);    
+        }
+
+    }else{
+
+        for (i = 0; i < 10; i++){
+        
+            time = multiplication(&csr, random_vector, M);
+            
+            if (time == -1.0) {
+                fprintf(stderr, "Memory error, SpMV failed\n");
+                return -1; 
+            }
+            
+            if(thread_num == 1){
+                    fprintf(fp, "%s, %d, seq, NULL, %f\n", matrix, thread_num, schedule_type, schedule_chunksize, time);
+            }else{
+                    fprintf(fp, "%s, %d, %s, %d, %f\n", matrix, thread_num, schedule_type, schedule_chunksize, time);    
+            }
+
+        }
+    }
+    
 
     fclose(fp);
 
@@ -109,6 +147,8 @@ int main(int argc, char *argv[]){
     free(csr.csr_col);
     free(csr.csr_val);
     free(csr.csr_vector);
+
+    free(random_vector);
 
     return 0;
 }
@@ -157,11 +197,16 @@ csr_matrix coo_to_csr(int M_, int nz_, int *I_, int* J_, double* val_){
 
 double* vect_generator(int N_){
     double* vect = malloc(N_ * sizeof(double));
-    for (int i = 0; i < N_; i++){ vect[i] = (double) (rand()% (MAX_RAND - MIN_RAND + 1) + MIN_RAND) / 1000.0; }
+    int i;
+    for (i = 0; i < N_; i++){ vect[i] = (double) (rand()% (MAX_RAND - MIN_RAND + 1) + MIN_RAND) / 1000.0; }
     return vect;    
 }
 
 double multiplication(const csr_matrix* mat, const double* vector, int M_){
+
+    if(thread_num == 1){
+        return multiplication_sequential(mat, vector, M_);
+    }
 
     double elapsed, finish, start;
     double* res_vect = malloc(M_ * sizeof(double));
@@ -172,13 +217,42 @@ double multiplication(const csr_matrix* mat, const double* vector, int M_){
 
 	int i, j;
 
-    #pragma omp parallel for default(none) shared(res_vect, M_)
+    GET_TIME(start)
+    #pragma omp parallel for default(none) shared(mat, vector, res_vect, M_) private(i, j) schedule(runtime)
+    for(i = 0; i < M_; i++){
+
+        double sum = 0.0;
+
+        for(j = mat->csr_vector[i]; j < mat->csr_vector[i + 1]; j++){
+            sum += mat->csr_val[j] * vector[mat->csr_col[j]];
+        }
+
+        res_vect[i] = sum;
+    }
+    GET_TIME(finish)
+
+    elapsed = finish - start;
+    free(res_vect);
+
+    return (elapsed * 1000);
+}
+
+double multiplication_sequential(const csr_matrix* mat, const double* vector, int M_){
+
+    double elapsed, finish, start;
+    double* res_vect = malloc(M_ * sizeof(double));
+    if (res_vect == NULL) {
+        fprintf(stderr, "Errore di allocazione per il vettore risultato c.\n");
+        return -1.0;
+    }
+
+	int i, j;
+
     for(i = 0; i < M_; i++){
         res_vect[i] = 0.0;
     }
 
     GET_TIME(start)
-    #pragma omp parallel for default(none) shared(mat, vector, res_vect, M_) private(i, j)
     for(i = 0; i < M_; i++){
 
         double sum = 0.0;
