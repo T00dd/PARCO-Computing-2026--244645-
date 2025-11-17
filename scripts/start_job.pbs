@@ -24,18 +24,9 @@ PERF_MODE=0
 PERF_RESULTS_FILE="../results/perf_results_logs.csv"
 PERF_TIME_RESULTS_FILE="../results/perf_time_results.csv"
 
-while getopts "p" opt; do
-  case $opt in
-    p)
-      echo "Activating PERF mode"
-      PERF_MODE=1 
-      ;;
-    \?)
-      echo "Error: Option -$OPTARG not valid." >&2
-      exit 1
-      ;;
-  esac
-done
+if [ "$PERF" -eq 1 ]; then
+	PERF_MODE=1
+fi
 
 #download matrices
 
