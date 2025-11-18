@@ -8,13 +8,13 @@ on the efficiency of the parallelization, with different number of threads and t
 
 ### Matrices used for the test
 
-The benchmark is executed on a set of sparse matrices, automatically downloaded from the SuiteSparse Matrix Collection ('sparse.tamu.edu'):
+The benchmark is executed on a set of sparse matrices, automatically downloaded from the SuiteSparse Matrix Collection (`sparse.tamu.edu`):
 
-- 'twotone' (ATandT) 
-- 'Transport' (Janna)
-- 'cage14' (vanHeukelum)
-- 'torso1' (Norris)
-- 'memchip' (Freescale)
+- `twotone` (ATandT) 
+- `Transport` (Janna)
+- `cage14` (vanHeukelum)
+- `torso1` (Norris)
+- `memchip` (Freescale)
 
 ## Project structure
 .
@@ -50,12 +50,12 @@ This is the intended execution mode for running the complete performance analysi
 #### Local (recommended for testing or development)
 
 You can compile and run the benchmark on your personal machine to test for correctness, develop new features, or perform smaller-scale measurements.
-In this case, you cannot launch the '.pbs' script directly. Instead, you must check the requirments:
+In this case, you cannot launch the `.pbs` script directly. Instead, you must check the requirments:
 
-1. A C Compiler with OpenMP (e.g., 'gcc')
-2. Download Utility: 'wget'
-3. Archive Utility: 'tar'
-4. 'Perf': utility for hardware profiling
+1. A C Compiler with OpenMP (e.g., `gcc`)
+2. Download Utility: `wget`
+3. Archive Utility: `tar`
+4. `Perf`: utility for hardware profiling
 
 ## How to execute the benchmark
 
@@ -63,53 +63,53 @@ The compilation and download are entirely managed by the PBS script
 
 #### Automatic data download 
 
-You do not need to download the matrices manually. The PBS script automatically checks if each matrix exist in the 'data/' folder at the beginning of each execution. If the matrices are not found, the script will automatically download and extract them.
+You do not need to download the matrices manually. The PBS script automatically checks if each matrix exist in the `data/` folder at the beginning of each execution. If the matrices are not found, the script will automatically download and extract them.
 
 #### Job submission (standard mode)
 
 ###### CLUSTER:
 
-To launch the job in the cluster (that will execute all the combinations of number of threads, schedules and chunck sizes for each matrix measuring only the multiplication time), navigate to the 'scripts/' folder and use 'qsub':
+To launch the job in the cluster (that will execute all the combinations of number of threads, schedules and chunck sizes for each matrix measuring only the multiplication time), navigate to the `scripts/` folder and use `qsub`:
 
-'''bash
+```bash
 qsub start_job.pbs
-
-The job will be submitted to the 'short_cpuQ' queue (maximum 6 hours), with 32 gb of dedicated RAM and 64 cores.
+```
+The job will be submitted to the `short_cpuQ` queue (maximum 6 hours), with 32 gb of dedicated RAM and 64 cores.
 
 ###### LOCAL:
 
-To launch the job in locally, navigate to the 'scripts/' folder and execute the '.sh':
+To launch the job in locally, navigate to the `scripts/` folder and execute the `.sh`:
 
-'''bash
+```bash
 ./start_job.sh
-
+```
 #### Job submission (perf mode)
 
 ###### CLUSTER:
 
-To activate hardware profiling (L1/LLC cache misses etc.) on the cluster, you need to pass the 'PERF' variable to the PBS script with the '-v' flag:
+To activate hardware profiling (L1/LLC cache misses etc.) on the cluster, you need to pass the `PERF` variable to the PBS script with the `-v` flag:
 
-'''bash
+```bash
 qsub -v PERF=1 start_job.pbs 
-
+```
 ###### LOCAL:
 
-To activate the perf mode locally, just use the '-p' flag with the .sh script:
+To activate the perf mode locally, just use the `-p` flag with the .sh script:
 
-'''bash
+```bash
 ./start_job.sh -p
-
+```
 ## Outputs
 
-All benchmark outputs are saved in the 'results/' folder:
+All benchmark outputs are saved in the `results/` folder:
 
-- 'log.out' and 'log.err': Logs of the output and standard error of the job (only if executed in the cluster).
+- `log.out` and `log.err`: Logs of the output and standard error of the job (only if executed in the cluster).
 
-- 'time_results.csv': (standard mode) contains the execution time (in milliseconds) for each matrix combination.
+- `time_results.csv`: (standard mode) contains the execution time (in milliseconds) for each matrix combination.
 
-- 'perf_time_results.csv': (perf mode) contains the execution time (in milliseconds) for each matrix combination but with hardware profiling activated.
+- `perf_time_results.csv`: (perf mode) contains the execution time (in milliseconds) for each matrix combination but with hardware profiling activated.
 
-- 'perf_results_logs.csv': (perf mode) contains the hardware profiling data (L1/LLC cache misses etc.) for each matrix combination.
+- `perf_results_logs.csv`: (perf mode) contains the hardware profiling data (L1/LLC cache misses etc.) for each matrix combination.
 
 
 
