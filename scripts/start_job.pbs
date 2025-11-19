@@ -17,6 +17,10 @@
 module load gcc91
 module load perf
 
+#for numa memory
+export OMP_PLACES=cores
+export OMP_PROC_BIND=close
+
  #going to the main directory of the deliverable
 cd "$PBS_O_WORKDIR/.."
 cd "src"
@@ -44,7 +48,7 @@ matrix_download(){
 	else
 		echo "Matrix not founded. Starting to download..."
 
-		wget -q --show-progress "$URL" -O "$TARGET_DIR/$NAME.tar.gz"
+		wget -q "$URL" -O "$TARGET_DIR/$NAME.tar.gz"
 
 		if [ $? -ne 0 ]; then
 			echo "ERROR: download $NAME failed!"
