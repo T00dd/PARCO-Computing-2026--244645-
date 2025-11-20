@@ -11,8 +11,10 @@
 #PBS -l walltime=06:00:00
 #PBS -l select=1:ncpus=64:mem=32gb
 
-#PBS -M giovanni.todesco@unitn.it
-#PBS -m ae
+#PBS -M giovanni.todesco@studenti.unitn.it
+#PBS -m a
+#PBS -m b
+#PBS -m e
 
 module load gcc91
 module load perf
@@ -130,7 +132,7 @@ if [ "$PERF_MODE" -eq 0 ]; then
 					echo "Running 10 times: $matrix_name, $threads, $schedule, $chunk"
 					
 					
-						./spmv_benchmark "$matrix_name" "$threads" "$schedule" "$chunk"
+						./spmv_benchmark "$matrix" "$threads" "$schedule" "$chunk"
 					                    
 					    if [ $? -ne 0 ]; then
 					    	echo "ERRORE durante l'esecuzione (Run $i): $matrix_name, $threads, $schedule, $chunk"
@@ -161,7 +163,7 @@ else
 					
 					for ((i=0; i<5; i++)); do
 							PERF_OUTPUT=$(perf stat -x, -e L1-dcache-loads,L1-dcache-load-misses,LLC-loads,LLC-misses \
-                            ./spmv_benchmark "$matrix_name" "$threads" "$schedule" "$chunk" "$TEMP_TIME_FILE" 2>&1)					    
+                            ./spmv_benchmark "$matrix" "$threads" "$schedule" "$chunk" "$TEMP_TIME_FILE" 2>&1)					    
 						
 						PERF_STATS=$(echo "$PERF_OUTPUT" | awk -F, '
                             /L1-dcache-loads/       { val1 = $1 }

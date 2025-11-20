@@ -123,7 +123,7 @@ if [ "$PERF_MODE" -eq 0 ]; then
 					echo "Running 10 times: $matrix_name, $threads, $schedule, $chunk"
 					
 					
-						./spmv_benchmark "$matrix_name" "$threads" "$schedule" "$chunk"
+						./spmv_benchmark "$matrix" "$threads" "$schedule" "$chunk"
 					                    
 					    if [ $? -ne 0 ]; then
 					    	echo "ERRORE durante l'esecuzione (Run $i): $matrix_name, $threads, $schedule, $chunk"
@@ -150,7 +150,7 @@ else
 						continue
 					fi
 									
-					echo "Running perf 5 times: $matrix, $threads, $schedule, $chunk"
+					echo "Running perf 5 times: $matrix_name, $threads, $schedule, $chunk"
 					
 					for ((i=0; i<5; i++)); do
 							PERF_OUTPUT=$(perf stat -x, -e L1-dcache-loads,L1-dcache-load-misses,LLC-loads,LLC-misses \
@@ -168,7 +168,7 @@ else
 						echo "$matrix_name,$threads,$schedule,$chunk,$PERF_STATS,$EXEC_TIME" >> "$PERF_RESULTS_FILE"
 
 						if [ $? -ne 0 ]; then
-					    	echo "ERRORE durante l'esecuzione perf (Run $i): $matrix, $threads, $schedule, $chunk"
+					    	echo "ERRORE durante l'esecuzione perf (Run $i): $matrix_name, $threads, $schedule, $chunk"
 					    fi
 					done
 
