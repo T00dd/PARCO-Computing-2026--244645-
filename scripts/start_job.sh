@@ -110,6 +110,9 @@ if [ "$PERF_MODE" -eq 0 ]; then
 
 
 	for matrix in "${MATRICES[@]}"; do
+
+		matrix_name=$(basename "$matrix" .mtx)
+
 		for threads in "${THREADS[@]}"; do
 			for schedule in "${SCHEDULES[@]}"; do
 				for chunk in "${CHUNKS[@]}"; do
@@ -117,13 +120,13 @@ if [ "$PERF_MODE" -eq 0 ]; then
 						continue
 					fi
 									
-					echo "Running 10 times: $matrix, $threads, $schedule, $chunk"
+					echo "Running 10 times: $matrix_name, $threads, $schedule, $chunk"
 					
 					
-						./spmv_benchmark "$matrix" "$threads" "$schedule" "$chunk"
+						./spmv_benchmark "$matrix_name" "$threads" "$schedule" "$chunk"
 					                    
 					    if [ $? -ne 0 ]; then
-					    	echo "ERRORE durante l'esecuzione (Run $i): $matrix, $threads, $schedule, $chunk"
+					    	echo "ERRORE durante l'esecuzione (Run $i): $matrix_name, $threads, $schedule, $chunk"
 					    fi
 					
 				done

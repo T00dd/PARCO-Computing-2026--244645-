@@ -7,3 +7,4 @@ data/rajat31.mtx
 data/web-Google.mtx
 data/*.mtx
 scripts/*.py
+plots/*png
