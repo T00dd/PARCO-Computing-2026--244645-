@@ -116,7 +116,7 @@ if [ "$PERF_MODE" -eq 0 ]; then
 		for threads in "${THREADS[@]}"; do
 			for schedule in "${SCHEDULES[@]}"; do
 				for chunk in "${CHUNKS[@]}"; do
-					if [ "$threads" -eq 1 ] && { [ "$schedule" != "static" ] || [ "$chunk" -ne 1 ]; }; then
+					if [ "$threads" -eq 1 ] && { [ "$schedule" != "static" ] || [ "$chunk" -ne 100 ]; }; then
 						continue
 					fi
 									
@@ -146,7 +146,7 @@ else
 			for schedule in "${SCHEDULES[@]}"; do
 				for chunk in "${CHUNKS[@]}"; do
 
-					if [ "$threads" -eq 1 ] && { [ "$schedule" != "static" ] || [ "$chunk" -ne 1 ]; }; then
+					if [ "$threads" -eq 1 ] && { [ "$schedule" != "static" ] || [ "$chunk" -ne 100 ]; }; then
 						continue
 					fi
 									

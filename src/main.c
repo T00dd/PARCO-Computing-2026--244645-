@@ -129,7 +129,7 @@ int main(int argc, char *argv[]){
             }
             
             if(thread_num == 1){
-                    fprintf(fp, "%s, %d, seq, NULL, %f\n", matrix, thread_num, schedule_type, schedule_chunksize, time);
+                    fprintf(fp, "%s, %d, seq, NULL, %f\n", matrix, thread_num, time);
             }else{
                     fprintf(fp, "%s, %d, %s, %d, %f\n", matrix, thread_num, schedule_type, schedule_chunksize, time);    
             }
